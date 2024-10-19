@@ -2,8 +2,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { LOCALSTORAGE_KEY } from '@/consts'
 
-export const useResultsStore = defineStore('recordsStore', () => {
+export const useResultsStore = defineStore('resultsStore', () => {
   const results = ref([])
+  const currentResult = ref(null)
+
+  function setCurrentResult(result) {
+    currentResult.value = result
+  }
 
   function setSortedResults() {
     results.value = JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY))
@@ -17,8 +22,10 @@ export const useResultsStore = defineStore('recordsStore', () => {
   }
 
   return {
-    results,
     setSortedResults,
-    saveResult
+    saveResult,
+    results,
+    setCurrentResult,
+    currentResult
   }
 })

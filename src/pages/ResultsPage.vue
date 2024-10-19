@@ -1,45 +1,44 @@
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useGameResultsStore } from '@/stores/GameResultsStore'
 import { useResultsStore } from '@/stores/ResultsStore'
 import router from '@/router'
 import toFormatTime from '@/helpers/toFormatTime'
+import { ROUTES } from '@/consts'
 
-const gameResultsStore = useGameResultsStore()
-const resultsStore = useResultsStore()
+const resultStore = useResultsStore()
 
 const nickNameRef = ref('')
 
 function toSortResultArray(results) {
-  return results.sort((a, b) => a.time - b.time).slice(0, 10)
+  return results.concat().sort((a, b) => a.time - b.time).slice(0, 10)
 }
 
 function onSaveResultClick() {
-  resultsStore.saveResult({ ...gameResultsStore.currentResult, nickname: nickNameRef.value })
-  gameResultsStore.setCurrentResult(null)
+  resultStore.saveResult({ ...resultStore.currentResult, nickname: nickNameRef.value })
+  resultStore.setCurrentResult(null)
 }
 
 function onToSettingsClick() {
   if (
-    gameResultsStore.currentResult &&
+    resultStore.currentResult &&
     confirm('Несохранённый результат будет утерян. Вы уверены?')
   ) {
-    gameResultsStore.setCurrentResult(null)
-    router.push('/')
+    resultStore.setCurrentResult(null)
+    router.push(ROUTES.SETTINGS)
     return
   }
-  router.push('/')
+  router.push(ROUTES.SETTINGS)
 }
 
 onMounted(() => {
-  resultsStore.setSortedResults()
+  resultStore.setSortedResults()
 })
 </script>
 
 <template>
   <div class="results bg-dark container d-flex flex-column">
     <BButton @click="onToSettingsClick" class="m-2">To Settings</BButton>
-    <BInputGroup v-if="gameResultsStore.currentResult" class="p-2">
+    <BInputGroup v-if="resultStore.currentResult" class="p-2">
       <BFormInput v-model="nickNameRef" placeholder="Nickname" />
       <BInputGroupAppend v-if="nickNameRef.length !== 0">
         <BButton @click="onSaveResultClick">Save</BButton>
@@ -47,7 +46,7 @@ onMounted(() => {
     </BInputGroup>
     <BListGroup class="results__list bg-dark p-2">
       <BListGroupItem
-        v-for="(result, index) in toSortResultArray(resultsStore.results)"
+        v-for="(result, index) in toSortResultArray(resultStore.results)"
         v-bind:key="result.id"
         class="d-flex bg-dark p-1 flex-grow-1 border"
       >

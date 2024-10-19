@@ -1,78 +1,80 @@
 <script setup>
-import { gameLevels } from '@/consts'
-import { useGameSettingsStore } from '@/stores/GameSettingsStore'
+import { LEVEL_NAMES, ROUTES } from '@/consts'
 import router from '@/router'
-import { watchEffect } from 'vue'
+import { useSettingStore } from '@/stores/SettingStore';
+import { onMounted, watchEffect } from 'vue'
 
-const gameSettingsStore = useGameSettingsStore()
+const settingsStore = useSettingStore()
 
-const redirectToGamePage = () => {
-  router.push('/game')
+function onLevelSelect(levelName) {
+  settingsStore.setLevel(levelName)
 }
 
-const redirectToRecordsPage = () => {
-  router.push('/results')
-}
-gameSettingsStore.setCurrentLevelInfo(gameLevels[0])
 watchEffect(() => {
-  const levelInfo = gameSettingsStore.currentLevelInfo
   if (
-    levelInfo.name === 'custom' &&
-    levelInfo.size[0] * levelInfo.size[1] * 0.5 < levelInfo.mines
+    settingsStore.name === LEVEL_NAMES.CUSTOM &&
+    settingsStore.size[0] * settingsStore.size[1] * 0.5 < settingsStore.mines
   ) {
-    levelInfo.mines = Math.floor(levelInfo.size[0] * levelInfo.size[1] * 0.5)
+    settingsStore.setMines(Math.floor(settingsStore.size[0] * settingsStore.size[1] * 0.5))
   }
+})
+onMounted(() => {
+  settingsStore.setLevel(LEVEL_NAMES.EASY)
 })
 </script>
 
 <template>
   <div class="container bg-dark p-3">
     <h1 class="text-light">Settings</h1>
-    <BFormSelect class="text-light mb-3 bg-dark" v-model="gameSettingsStore.currentLevelInfo">
+    <BFormSelect
+      class="text-light mb-3 bg-dark"
+      v-model="settingsStore.name"
+      @update:model-value="onLevelSelect"
+    >
       <BFormSelectOption
         class="bg-dark"
-        v-for="level in gameLevels"
-        v-bind:key="level.name"
-        :value="level"
-        >{{ level.name }}</BFormSelectOption
+        v-for="name in Object.values(LEVEL_NAMES)"
+        v-bind:key="name"
+        :value="name"
+        >{{ name }}</BFormSelectOption
       >
     </BFormSelect>
     <BListGroup class="mb-3 bg-dark">
       <BListGroupItem class="bg-dark text-light">
         Playing field size:
         {{
-          `${gameSettingsStore.currentLevelInfo.size[0]} / ${gameSettingsStore.currentLevelInfo.size[1]}`
+          `${settingsStore.size[0]} / ${settingsStore.size[1]}`
         }}
         <BFormInput
-          v-if="gameSettingsStore.currentLevelInfo.name === 'custom'"
-          v-model="gameSettingsStore.currentLevelInfo.size[0]"
+          v-if="settingsStore.name === LEVEL_NAMES.CUSTOM"
+          v-model="settingsStore.size[0]"
           type="range"
           min="5"
           max="32" /><BFormInput
-          v-if="gameSettingsStore.currentLevelInfo.name === 'custom'"
-          v-model="gameSettingsStore.currentLevelInfo.size[1]"
+          v-if="settingsStore.name === LEVEL_NAMES.CUSTOM"
+          v-model="settingsStore.size[1]"
           class="bg-dark"
           type="range"
           min="5"
           max="32"
       /></BListGroupItem>
       <BListGroupItem class="bg-dark text-light"
-        >Number of mines: {{ gameSettingsStore.currentLevelInfo.mines }}
+        >Number of mines: {{ settingsStore.mines }}
         <BFormInput
-          v-if="gameSettingsStore.currentLevelInfo.name === 'custom'"
-          v-model="gameSettingsStore.currentLevelInfo.mines"
+          v-if="settingsStore.name === LEVEL_NAMES.CUSTOM"
+          v-model="settingsStore.mines"
           class="bg-dark"
           type="range"
           min="1"
           :max="
-            gameSettingsStore.currentLevelInfo.size[0] *
-            gameSettingsStore.currentLevelInfo.size[1] *
+            settingsStore.size[0] *
+            settingsStore.size[1] *
             0.5
           "
       /></BListGroupItem>
     </BListGroup>
-    <BButton @click="redirectToGamePage" class="button">Start Game</BButton>
-    <BButton @click="redirectToRecordsPage" class="button">To Records List</BButton>
+    <BButton @click="() => router.push(ROUTES.GAME)" class="button">Start Game</BButton>
+    <BButton @click="() => router.push(ROUTES.RESULTS)" class="button">To Results List</BButton>
   </div>
 </template>
 

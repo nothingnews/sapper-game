@@ -1,18 +1,48 @@
 <script setup>
 import FlagIcon from '@/assets/fieldsIcons/FlagIcon.vue'
 import QuestionIcon from '@/assets/fieldsIcons/QuestionIcon.vue'
+import { useGameStore } from '@/stores/GameStore';
+import { FIELD_STATUSES, GAME_STATUSES } from '@/consts';
+import { useResultsStore } from '@/stores/ResultsStore';
+import isGameFinished from './helpers/isGameFinished';
+import toOpenField from '../stores/helpers/toOpenField';
+import { useSettingStore } from '@/stores/SettingStore';
+
+const gameStore = useGameStore()
+const resultStore = useResultsStore()
+const settingsStore = useSettingStore()
+
 defineProps({
-  matrix: Array,
-  board: Array,
-  gameStatus: String,
-  onFieldClick: Function,
   onFieldMouseMove: Function
 })
+
+function onFieldClick(field, fieldCoordinates) {
+  if (gameStore.status === GAME_STATUSES.LOSE) {
+    return
+  }
+  if (gameStore.status === GAME_STATUSES.READY) {
+    resultStore.setCurrentResult(null)
+    gameStore.startGame(settingsStore.mines, settingsStore.size, fieldCoordinates)
+  }
+  if (field.value === -1) {
+    gameStore.setStatus(GAME_STATUSES.LOSE)
+    gameStore.timer.stop()
+    return
+  }
+  if (field.isOpen === true) {
+    return
+  }
+  toOpenField(gameStore, settingsStore.size, field, fieldCoordinates)
+  if (isGameFinished(gameStore.board) === true) {
+    gameStore.setStatus(GAME_STATUSES.WIN)
+    gameStore.timer.stop()
+  }
+}
 </script>
 
 <template>
-  <div v-if="board !== null" class="board">
-    <div v-for="(row, indexRow) in board" v-bind:key="indexRow" class="board-row">
+  <div v-if="gameStore.status !== GAME_STATUSES.READY" class="board">
+    <div v-for="(row, indexRow) in gameStore.board" v-bind:key="indexRow" class="board-row">
       <div
         v-for="(col, indexColumn) in row"
         v-bind:key="indexColumn"
@@ -22,15 +52,15 @@ defineProps({
         @click="() => onFieldClick(col, [indexRow, indexColumn])"
         @mousemove="() => onFieldMouseMove(col)"
       >
-        {{ gameStatus === 'lose' && col.value === -1 ? '*' : '' }}
+        {{ gameStore.status === GAME_STATUSES.LOSE && col.value === -1 ? '*' : '' }}
         {{ col.isOpen && col.value !== 0 ? col.value : '' }}
-        <FlagIcon v-if="col.icon === 'flag' && gameStatus !== 'lose'" class="field-icon" />
-        <QuestionIcon v-if="col.icon === 'question' && gameStatus !== 'lose'" class="field-icon" />
+        <FlagIcon v-if="col.icon === FIELD_STATUSES.FLAG && gameStore.status !== GAME_STATUSES.LOSE" class="field-icon" />
+        <QuestionIcon v-if="col.icon === FIELD_STATUSES.QUESTION && gameStore.status !== GAME_STATUSES.LOSE" class="field-icon" />
       </div>
     </div>
   </div>
   <div v-else class="board">
-    <div v-for="(row, indexRow) in matrix" v-bind:key="indexRow" class="board-row">
+    <div v-for="(row, indexRow) in gameStore.board" v-bind:key="indexRow" class="board-row">
       <div
         v-for="(col, indexColumn) in row"
         v-bind:key="indexColumn"

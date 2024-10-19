@@ -1,10 +1,10 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import { getLocalStorage, setLocalStorage } from '@/api/appApi'
-import { defaultLocalStorage } from './consts'
+import { DEFAULT_LOCAL_STORAGE_VALUES } from './consts'
 
 if (getLocalStorage() === null) {
-  setLocalStorage(defaultLocalStorage)
+  setLocalStorage(DEFAULT_LOCAL_STORAGE_VALUES)
 }
 </script>
 
