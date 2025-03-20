@@ -1,48 +1,54 @@
-<script setup>
-import FlagIcon from '@/assets/fieldsIcons/FlagIcon.vue'
-import QuestionIcon from '@/assets/fieldsIcons/QuestionIcon.vue'
+<script setup lang="ts">
 import { useGameStore } from '@/stores/GameStore';
-import { FIELD_STATUSES, GAME_STATUSES } from '@/consts';
-import { useResultsStore } from '@/stores/ResultsStore';
-import isGameFinished from './helpers/isGameFinished';
+import { useRootStore } from '@/stores/RootStore';
+import isGameFinished from '@/helpers/isGameFinished';
 import toOpenField from '../stores/helpers/toOpenField';
-import { useSettingStore } from '@/stores/SettingStore';
+import type { IField } from '@/types/field.interface';
+import type { Coordinates } from '@/types/coordinates.type';
+import { onMounted } from 'vue';
+import { useRouter } from 'nuxt/app';
 
+const router = useRouter()
 const gameStore = useGameStore()
-const resultStore = useResultsStore()
-const settingsStore = useSettingStore()
+const rootStore = useRootStore()
 
-defineProps({
-  onFieldMouseMove: Function
-})
+defineProps<{
+  onFieldMouseMove: (field: IField) => void
+}>()
 
-function onFieldClick(field, fieldCoordinates) {
-  if (gameStore.status === GAME_STATUSES.LOSE) {
+function onFieldClick(field: IField, fieldCoordinates: Coordinates) {
+  if (!rootStore.gameSettings || gameStore.status === 'lose') {
     return
   }
-  if (gameStore.status === GAME_STATUSES.READY) {
-    resultStore.setCurrentResult(null)
-    gameStore.startGame(settingsStore.mines, settingsStore.size, fieldCoordinates)
+  if (gameStore.status === 'ready') {
+    rootStore.setCurrentResult(null)
+    gameStore.startGame(rootStore.gameSettings, fieldCoordinates)
   }
   if (field.value === -1) {
-    gameStore.setStatus(GAME_STATUSES.LOSE)
+    gameStore.setStatus('lose')
     gameStore.timer.stop()
     return
   }
   if (field.isOpen === true) {
     return
   }
-  toOpenField(gameStore, settingsStore.size, field, fieldCoordinates)
+  toOpenField(gameStore, rootStore.gameSettings.size, fieldCoordinates)
   if (isGameFinished(gameStore.board) === true) {
-    gameStore.setStatus(GAME_STATUSES.WIN)
+    gameStore.setStatus('win')
     gameStore.timer.stop()
   }
 }
+
+onMounted(() => {
+  if (!rootStore.gameSettings) {
+    router.push({ name: 'index' })
+  }
+})
 </script>
 
 <template>
-  <div v-if="gameStore.status !== GAME_STATUSES.READY" class="board">
-    <div v-for="(row, indexRow) in gameStore.board" v-bind:key="indexRow" class="board-row">
+  <div v-if="gameStore.status !== 'ready'" class="board">
+    <div v-for="(row, indexRow) in gameStore.board as IField[][]" v-bind:key="indexRow" class="board-row">
       <div
         v-for="(col, indexColumn) in row"
         v-bind:key="indexColumn"
@@ -52,10 +58,10 @@ function onFieldClick(field, fieldCoordinates) {
         @click="() => onFieldClick(col, [indexRow, indexColumn])"
         @mousemove="() => onFieldMouseMove(col)"
       >
-        {{ gameStore.status === GAME_STATUSES.LOSE && col.value === -1 ? '*' : '' }}
+        {{ gameStore.status === 'lose' && col.value === -1 ? '*' : '' }}
         {{ col.isOpen && col.value !== 0 ? col.value : '' }}
-        <FlagIcon v-if="col.icon === FIELD_STATUSES.FLAG && gameStore.status !== GAME_STATUSES.LOSE" class="field-icon" />
-        <QuestionIcon v-if="col.icon === FIELD_STATUSES.QUESTION && gameStore.status !== GAME_STATUSES.LOSE" class="field-icon" />
+        <img src="@/assets/fieldsIcons/flagIcon.svg" alt="Flag Icon" v-if="col.status === 'flag' && gameStore.status !== 'lose'" class="field-icon" />
+        <img src="@/assets/fieldsIcons/questionIcon.svg" alt="Question Icon" v-if="col.status === 'question' && gameStore.status !== 'lose'" class="field-icon" />
       </div>
     </div>
   </div>
