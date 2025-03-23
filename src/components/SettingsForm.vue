@@ -15,7 +15,7 @@ function onLevelSelect(name: LevelNames) {
 
 function onSizeInput() {
   if (rootStore.gameSettings) {
-    rootStore.gameSettings.size = [Number(rootStore.gameSettings.size[0]), Number(rootStore.gameSettings.size[0])]
+    rootStore.gameSettings.size = [Number(rootStore.gameSettings.size[0]), Number(rootStore.gameSettings.size[1])]
   }
 }
 
@@ -67,7 +67,9 @@ onMounted(() => {
         :oninput="onSizeInput"
         type="range"
         min="5"
-        max="32" /><BFormInput
+        max="32"
+      />
+      <BFormInput
         v-if="levelNameRef === 'custom'"
         v-model="rootStore.gameSettings.size[1]"
         :oninput="onSizeInput"
@@ -75,7 +77,8 @@ onMounted(() => {
         type="range"
         min="5"
         max="32"
-    /></BListGroupItem>
+      />
+    </BListGroupItem>
     <BListGroupItem class="bg-dark text-light"
       >Number of mines: {{ rootStore.gameSettings.mines }}
       <BFormInput
